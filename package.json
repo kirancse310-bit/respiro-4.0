@@ -1,0 +1,40 @@
+{
+  "name": "respiro-2.0",
+  "version": "2.0.0",
+  "description": "Respiro 2.0: GenAI-powered Urban Air Quality Assistant & Community Smog Defense Platform. Simple HTML/CSS/JS frontend, Express 5 backend with deterministic impact computing and WCAG 2.2 AA accessibility.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "air-quality",
+    "smog-defense",
+    "cadr-calculator",
+    "exposure-routing",
+    "genai-assistant",
+    "wcag22",
+    "urban-health"
+  ],
+  "author": "Respiro Team",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.2",
+    "jsdom": "^26.0.0",
+    "vitest": "^3.0.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

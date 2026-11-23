@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Respiro 2.0: GenAI-powered urban air quality assistant, lowest-exposure transit routing, indoor CADR engineering, and collective smog defense platform.">
+  <title>Respiro 2.0 · Urban Air Quality Assistant & Community Smog Defense</title>
+
+  <!-- High-contrast stylesheets -->
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+  <!-- Skip Link for Keyboard Accessibility (WCAG 2.4.1) -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ARIA Live Region for Screen Readers -->
+  <div id="aria-live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Header -->
+  <header class="app-header" role="banner">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true">🍃</span>
+        <div>
+          <h1 class="brand-title" data-i18n="title">Respiro 2.0</h1>
+          <p class="brand-tagline" data-i18n="tagline">GenAI Urban Air Quality Assistant & Community Smog Defense</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <label for="city-select" class="sr-only">Choose Urban Region</label>
+        <select id="city-select" class="city-select" aria-label="Select City">
+          <option value="Delhi">Delhi (NCR)</option>
+          <option value="Noida">Noida</option>
+          <option value="Gurugram">Gurugram</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Kolkata">Kolkata</option>
+          <option value="Patna">Patna</option>
+          <option value="Lucknow">Lucknow</option>
+          <option value="Ahmedabad">Ahmedabad</option>
+          <option value="Kanpur">Kanpur</option>
+          <option value="Bengaluru">Bengaluru</option>
+        </select>
+
+        <label for="lang-select" class="sr-only">Choose Language</label>
+        <select id="lang-select" class="lang-select" aria-label="Select Language">
+          <option value="en">English</option>
+          <option value="hi">हिंदी (Hindi)</option>
+          <option value="ur">اردو (Urdu)</option>
+          <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+          <option value="bn">বাংলা (Bengali)</option>
+          <option value="mr">मराठी (Marathi)</option>
+        </select>
+
+        <button id="theme-toggle-btn" class="theme-btn" aria-label="Toggle High-Contrast Light or Dark Theme">🌙 Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Primary Tab Navigation (WCAG 2.1 Tablist Pattern) -->
+  <nav class="nav-tabs" role="navigation" aria-label="Primary Features">
+    <div class="nav-tabs-container" role="tablist">
+      <button id="tab-btn-dashboard" class="tab-button" role="tab" aria-selected="true" aria-controls="panel-dashboard" tabindex="0">
+        <span aria-hidden="true">📊</span> <span data-i18n="tab_dashboard">Live Telemetry</span>
+      </button>
+      <button id="tab-btn-routine" class="tab-button" role="tab" aria-selected="false" aria-controls="panel-routine" tabindex="-1">
+        <span aria-hidden="true">🤖</span> <span data-i18n="tab_routine">AI Routine Optimizer</span>
+      </button>
+      <button id="tab-btn-navigator" class="tab-button" role="tab" aria-selected="false" aria-controls="panel-navigator" tabindex="-1">
+        <span aria-hidden="true">🧭</span> <span data-i18n="tab_navigator">Exposure Navigator</span>
+      </button>
+      <button id="tab-btn-cadr" class="tab-button" role="tab" aria-selected="false" aria-controls="panel-cadr" tabindex="-1">
+        <span aria-hidden="true">🏠</span> <span data-i18n="tab_cadr">Clean Air Engineering</span>
+      </button>
+      <button id="tab-btn-community" class="tab-button" role="tab" aria-selected="false" aria-controls="panel-community" tabindex="-1">
+        <span aria-hidden="true">🤝</span> <span data-i18n="tab_community">Smog Defense Watch</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main id="main-content" class="main-content">
+    
+    <!-- Tab 1: Live Telemetry Dashboard -->
+    <div id="panel-dashboard" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-dashboard">
+      <div id="dashboard-view">
+        <p class="alert-box">Loading atmospheric sensor telemetry...</p>
+      </div>
+    </div>
+
+    <!-- Tab 2: AI Routine Optimizer -->
+    <div id="panel-routine" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-routine">
+      <section class="card" aria-labelledby="routine-heading">
+        <h2 id="routine-heading" class="card-title">🤖 AI Household Routine Optimizer</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+          Calibrates hour-by-hour routines, indoor isolation windows, and clean commute switches based on your family profile. The model explains; numbers are verified by our deterministic impact engine.
+        </p>
+
+        <form id="routine-form">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <div class="form-group">
+              <label for="prof-commute" class="form-label">Daily Commute Mode</label>
+              <select id="prof-commute" class="form-select">
+                <option value="two_wheeler">Petrol Motorbike / Scooter</option>
+                <option value="car">Petrol / Diesel Car</option>
+                <option value="auto">Open Auto-rickshaw</option>
+                <option value="metro">Electric Metro / Rail</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-distance" class="form-label">One-Way Commute Distance (km)</label>
+              <input type="number" id="prof-distance" class="form-input" min="1" max="80" value="12">
+            </div>
+
+            <div class="form-group">
+              <label for="prof-outdoor-hours" class="form-label">Daily Outdoor Hours</label>
+              <input type="number" id="prof-outdoor-hours" class="form-input" min="0.5" max="12" step="0.5" value="2">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+              <input type="checkbox" id="prof-vulnerable" checked style="width: 18px; height: 18px;">
+              <span>Household includes vulnerable members (child, senior citizen, asthmatic, or pregnant resident)</span>
+            </label>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="prof-notes" class="form-label">Lifestyle Specifics or Health Notes (Optional, max 300 characters)</label>
+            <textarea id="prof-notes" class="form-textarea" rows="2" maxlength="300" placeholder="e.g. Morning jogger, toddler sleeps near balcony, home has wooden windows..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" data-i18n="get_plan">Generate Calibrated Routine</button>
+        </form>
+
+        <div id="routine-results"></div>
+      </section>
+    </div>
+
+    <!-- Tab 3: Exposure Navigator -->
+    <div id="panel-navigator" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-navigator">
+      <section class="card" aria-labelledby="nav-heading">
+        <h2 id="nav-heading" class="card-title">🧭 Lowest-Exposure Transit Pathfinding</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+          Calculates cumulative inhaled particulate dose ($\mu\text{g}$) using EPA inhalation rates and microenvironmental penetration factors across 5 transit options.
+        </p>
+
+        <div class="form-group">
+          <label for="nav-distance" class="form-label">
+            Commute Distance: <strong id="nav-dist-val" style="color: var(--primary);">8 km</strong>
+          </label>
+          <input type="range" id="nav-distance" class="form-input" min="1" max="40" step="1" value="8" style="padding: 0;">
+        </div>
+
+        <button id="nav-compare-btn" class="btn-primary" data-i18n="calc_dose">Compare Transit Exposure</button>
+
+        <div id="nav-results"></div>
+      </section>
+    </div>
+
+    <!-- Tab 4: Clean Air Engineering & CADR -->
+    <div id="panel-cadr" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-cadr">
+      <section class="card" aria-labelledby="cadr-heading">
+        <h2 id="cadr-heading" class="card-title">🏠 Clean Air Engineering & CADR Sizing</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+          Calculates required Clean Air Delivery Rate (CADR) for your room based on ASHRAE 62.2 standards, with engineering blueprints for building an affordable DIY Corsi-Rosenthal box.
+        </p>
+
+        <form id="cadr-form">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <div class="form-group">
+              <label for="cadr-length" class="form-label">Room Length (ft)</label>
+              <input type="number" id="cadr-length" class="form-input" min="6" max="60" value="16">
+            </div>
+            <div class="form-group">
+              <label for="cadr-width" class="form-label">Room Width (ft)</label>
+              <input type="number" id="cadr-width" class="form-input" min="6" max="60" value="13">
+            </div>
+            <div class="form-group">
+              <label for="cadr-height" class="form-label">Ceiling Height (ft)</label>
+              <input type="number" id="cadr-height" class="form-input" min="7" max="20" value="9">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" data-i18n="calc_cadr">Calculate Required Clean Air Rate</button>
+        </form>
+
+        <div id="cadr-results"></div>
+      </section>
+    </div>
+
+    <!-- Tab 5: Smog Defense Watch -->
+    <div id="panel-community" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-community">
+      <section class="card" aria-labelledby="community-heading">
+        <h2 id="community-heading" class="card-title">🤝 Collective Smog Defense & Community Watch</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+          Collective smog action: log emission-reduction pledges, report illegal open biomass burning, and protect vulnerable neighbors.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+          <!-- Pledge Form -->
+          <div style="background: var(--bg-elevated); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Pledge an Emission Reduction Action</h3>
+            <form id="pledge-form">
+              <div class="form-group">
+                <label for="pledge-name" class="form-label">Your Name</label>
+                <input type="text" id="pledge-name" class="form-input" placeholder="e.g. Suman Sharma">
+              </div>
+              <div class="form-group">
+                <label for="pledge-locality" class="form-label">Locality / Sector</label>
+                <input type="text" id="pledge-locality" class="form-input" placeholder="e.g. Rohini Sector 9, Delhi">
+              </div>
+              <div class="form-group">
+                <label for="pledge-action" class="form-label">Pledge Action</label>
+                <select id="pledge-action" class="form-select">
+                  <option value="Switched daily commute to Metro / Electric Bus">Switched daily commute to Metro / Electric Bus</option>
+                  <option value="Zero open leaf and waste burning in society">Zero open leaf and waste burning in society</option>
+                  <option value="Built DIY Corsi-Rosenthal filter for shared children room">Built DIY Corsi-Rosenthal filter for shared children room</option>
+                  <option value="Welfare check-in for senior citizens on hazardous AQI days">Welfare check-in for senior citizens on hazardous AQI days</option>
+                </select>
+              </div>
+              <input type="hidden" id="pledge-co2" value="15">
+              <button type="submit" class="btn-primary">Submit Public Pledge</button>
+            </form>
+          </div>
+
+          <!-- Pledges Feed -->
+          <div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Active Community Pledges</h3>
+            <div id="community-pledges-list"></div>
+          </div>
+
+          <!-- Anti-Burn Incident Report -->
+          <div style="background: var(--bg-elevated); padding: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Report Open Waste Burning / Dust Violation</h3>
+            <form id="incident-form">
+              <div class="form-group">
+                <label for="incident-reporter" class="form-label">Reporter Tag</label>
+                <input type="text" id="incident-reporter" class="form-input" placeholder="e.g. Green Citizen Watcher">
+              </div>
+              <div class="form-group">
+                <label for="incident-locality" class="form-label">Location / Landmark</label>
+                <input type="text" id="incident-locality" class="form-input" required placeholder="e.g. Near Anand Vihar Bus Terminal">
+              </div>
+              <div class="form-group">
+                <label for="incident-type" class="form-label">Violation Category</label>
+                <select id="incident-type" class="form-select">
+                  <option value="Open biomass / dry leaves bonfire">Open biomass / dry leaves bonfire</option>
+                  <option value="Plastic or municipal waste burning">Plastic or municipal waste burning</option>
+                  <option value="Uncovered construction dust debris">Uncovered construction dust debris</option>
+                  <option value="Commercial diesel generator running unshielded">Commercial diesel generator running unshielded</option>
+                </select>
+              </div>
+              <button type="submit" class="btn-primary" style="background: #ef4444;" data-i18n="anti_burn_alert">Report Smog Incident</button>
+            </form>
+          </div>
+
+          <!-- Incidents Feed -->
+          <div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Recent Neighborhood Smog Alerts</h3>
+            <div id="community-incidents-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Accessible Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-container">
+      <p><strong>Respiro 2.0</strong> · Urban Air Quality Assistant & Community Smog Defense Platform</p>
+      <p>Deterministic calculations based on US EPA, ASHRAE 62.2, WHO, and CPCB empirical factors.</p>
+      <p>WCAG 2.2 Level AA Accessible · Content Security Policy Level 3 · Zero Bloat Architecture</p>
+    </div>
+  </footer>
+
+  <!-- Application Script -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

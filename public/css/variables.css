@@ -1,0 +1,73 @@
+:root {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Color Palette - High Contrast Light Theme */
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #334155;
+  --text-dim: #64748b;
+  --border-color: #cbd5e1;
+  --border-focus: #0284c7;
+
+  /* Brand Accents */
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-text: #ffffff;
+  --accent: #0d9488;
+  --accent-light: #ccfbf1;
+
+  /* AQI Severity Tints (High-contrast accessible text) */
+  --aqi-good-bg: #ecfdf5;
+  --aqi-good-text: #065f46;
+  --aqi-moderate-bg: #fefce8;
+  --aqi-moderate-text: #854d0e;
+  --aqi-sensitive-bg: #fff7ed;
+  --aqi-sensitive-text: #9a3412;
+  --aqi-unhealthy-bg: #fef2f2;
+  --aqi-unhealthy-text: #991b1b;
+  --aqi-veryunhealthy-bg: #faf5ff;
+  --aqi-veryunhealthy-text: #581c87;
+  --aqi-hazardous-bg: #450a0a;
+  --aqi-hazardous-text: #fef2f2;
+
+  /* Spacing & Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #090d16;
+  --bg-surface: #111827;
+  --bg-elevated: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-dim: #94a3b8;
+  --border-color: #334155;
+  --border-focus: #38bdf8;
+
+  --primary: #38bdf8;
+  --primary-hover: #0ea5e9;
+  --primary-text: #0f172a;
+  --accent: #14b8a6;
+  --accent-light: #134e4a;
+
+  --aqi-good-bg: #064e3b;
+  --aqi-good-text: #ecfdf5;
+  --aqi-moderate-bg: #713f12;
+  --aqi-moderate-text: #fef9c3;
+  --aqi-sensitive-bg: #7c2d12;
+  --aqi-sensitive-text: #ffedd5;
+  --aqi-unhealthy-bg: #7f1d1d;
+  --aqi-unhealthy-text: #fee2e2;
+  --aqi-veryunhealthy-bg: #4c1d95;
+  --aqi-veryunhealthy-text: #f3e8ff;
+  --aqi-hazardous-bg: #1c1917;
+  --aqi-hazardous-text: #fca5a5;
+}

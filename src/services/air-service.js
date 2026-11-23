@@ -1,0 +1,142 @@
+/**
+ * Air Quality Telemetry Service.
+ * Fetches real-time CAMS air telemetry from Open-Meteo with in-memory TTL caching
+ * and automatic fallback to typical winter smog profiles for 10 Indian cities.
+ */
+
+import { LIMITS } from '../config/limits.js';
+import { calculateOverallAQI } from '../lib/aqi-calculator.js';
+
+// Typical winter baseline concentrations for key Indian urban centers
+export const TYPICAL_INDIAN_CITIES = {
+  delhi: { name: 'Delhi (NCR)', lat: 28.6139, lon: 77.2090, pm2_5: 220, pm10: 340, no2: 55, co: 1800, o3: 35 },
+  noida: { name: 'Noida', lat: 28.5355, lon: 77.3910, pm2_5: 210, pm10: 320, no2: 50, co: 1700, o3: 30 },
+  gurugram: { name: 'Gurugram', lat: 28.4595, lon: 77.0266, pm2_5: 205, pm10: 310, no2: 52, co: 1750, o3: 32 },
+  mumbai: { name: 'Mumbai', lat: 19.0760, lon: 72.8777, pm2_5: 110, pm10: 165, no2: 40, co: 1100, o3: 45 },
+  kolkata: { name: 'Kolkata', lat: 22.5726, lon: 88.3639, pm2_5: 185, pm10: 270, no2: 48, co: 1500, o3: 38 },
+  patna: { name: 'Patna', lat: 25.5941, lon: 85.1376, pm2_5: 240, pm10: 360, no2: 58, co: 1950, o3: 28 },
+  lucknow: { name: 'Lucknow', lat: 26.8467, lon: 80.9462, pm2_5: 195, pm10: 290, no2: 45, co: 1600, o3: 35 },
+  ahmedabad: { name: 'Ahmedabad', lat: 23.0225, lon: 72.5714, pm2_5: 140, pm10: 210, no2: 38, co: 1200, o3: 42 },
+  kanpur: { name: 'Kanpur', lat: 26.4499, lon: 80.3319, pm2_5: 215, pm10: 315, no2: 50, co: 1700, o3: 30 },
+  bengaluru: { name: 'Bengaluru', lat: 12.9716, lon: 77.5946, pm2_5: 65, pm10: 95, no2: 25, co: 800, o3: 50 },
+};
+
+// In-memory cache
+const cache = new Map();
+
+export async function fetchLiveAirQuality(cityName = 'Delhi') {
+  const normalizedKey = cityName.toLowerCase().trim();
+  const cached = cache.get(normalizedKey);
+  const now = Date.now();
+
+  if (cached && now - cached.timestamp < LIMITS.CACHE_AIR_TTL_MS) {
+    return { ...cached.data, source: 'edge-cache' };
+  }
+
+  // Find city coordinate baseline
+  const matched = TYPICAL_INDIAN_CITIES[normalizedKey] || TYPICAL_INDIAN_CITIES.delhi;
+
+  try {
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${matched.lat}&longitude=${matched.lon}&current=pm10,pm2_5,nitrogen_dioxide,carbon_monoxide,ozone,us_aqi&hourly=pm2_5,pm10,us_aqi&timezone=auto&forecast_days=2`;
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`Open-Meteo returned status ${response.status}`);
+    }
+
+    const json = await response.json();
+    const current = json.current || {};
+    const hourly = json.hourly || { time: [], pm2_5: [], us_aqi: [] };
+
+    // Find cleanest and worst hours of next 24 hours
+    const next24Pm25 = (hourly.pm2_5 || []).slice(0, 24);
+    let minPm25 = Infinity;
+    let maxPm25 = -Infinity;
+    let cleanestHour = '06:00';
+    let worstHour = '21:00';
+
+    next24Pm25.forEach((val, idx) => {
+      if (val != null) {
+        if (val < minPm25) {
+          minPm25 = val;
+          cleanestHour = (hourly.time[idx] || '').split('T')[1] || `${idx}:00`;
+        }
+        if (val > maxPm25) {
+          maxPm25 = val;
+          worstHour = (hourly.time[idx] || '').split('T')[1] || `${idx}:00`;
+        }
+      }
+    });
+
+    const pollutants = {
+      pm2_5: current.pm2_5 ?? matched.pm2_5,
+      pm10: current.pm10 ?? matched.pm10,
+      no2: current.nitrogen_dioxide ?? matched.no2,
+      co: current.carbon_monoxide ?? matched.co,
+      o3: current.ozone ?? matched.o3,
+    };
+
+    const overall = calculateOverallAQI(pollutants);
+
+    const payload = {
+      city: matched.name,
+      timestamp: new Date().toISOString(),
+      pollutants,
+      aqi: overall.aqi,
+      category: overall.category,
+      symbol: overall.symbol,
+      action: overall.action,
+      dominantPollutant: overall.dominantPollutant,
+      cleanestHour: cleanestHour.slice(0, 5),
+      cleanestPm25: Math.round(minPm25 === Infinity ? pollutants.pm2_5 * 0.7 : minPm25),
+      worstHour: worstHour.slice(0, 5),
+      worstPm25: Math.round(maxPm25 === -Infinity ? pollutants.pm2_5 * 1.5 : maxPm25),
+      hourlyForecast: next24Pm25.slice(0, 12).map((val, idx) => ({
+        hour: (hourly.time[idx] || '').split('T')[1]?.slice(0, 5) || `${idx}:00`,
+        pm25: Math.round(val ?? 100),
+      })),
+      source: 'live-open-meteo',
+    };
+
+    cache.set(normalizedKey, { timestamp: now, data: payload });
+    return payload;
+  } catch (error) {
+    // Graceful offline fallback to verified winter baseline
+    const pollutants = {
+      pm2_5: matched.pm2_5,
+      pm10: matched.pm10,
+      no2: matched.no2,
+      co: matched.co,
+      o3: matched.o3,
+    };
+    const overall = calculateOverallAQI(pollutants);
+
+    return {
+      city: matched.name,
+      timestamp: new Date().toISOString(),
+      pollutants,
+      aqi: overall.aqi,
+      category: overall.category,
+      symbol: overall.symbol,
+      action: overall.action,
+      dominantPollutant: overall.dominantPollutant,
+      cleanestHour: '14:00',
+      cleanestPm25: Math.round(matched.pm2_5 * 0.75),
+      worstHour: '21:00',
+      worstPm25: Math.round(matched.pm2_5 * 1.4),
+      hourlyForecast: [
+        { hour: '06:00', pm25: Math.round(matched.pm2_5 * 1.2) },
+        { hour: '09:00', pm25: Math.round(matched.pm2_5 * 1.3) },
+        { hour: '12:00', pm25: Math.round(matched.pm2_5 * 0.85) },
+        { hour: '15:00', pm25: Math.round(matched.pm2_5 * 0.75) },
+        { hour: '18:00', pm25: Math.round(matched.pm2_5 * 1.1) },
+        { hour: '21:00', pm25: Math.round(matched.pm2_5 * 1.4) },
+      ],
+      source: 'typical-winter-baseline',
+    };
+  }
+}
