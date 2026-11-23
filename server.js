@@ -36,41 +36,68 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-// Defensive Middleware Pipeline
+// Defensive Security Headers Pipeline
 app.use(helmet({
   contentSecurityPolicy: false, // Managed via comprehensive custom CSP
   crossOriginEmbedderPolicy: false,
 }));
-
-// Dynamic CORS allowlist
-const allowedOrigins = process.env.ALLOWED_ORIGIN
-  ? process.env.ALLOWED_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Origin not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST'],
-}));
-
 app.use(securityHeadersMiddleware);
-app.use(validatePayloadSize);
-app.use(express.json({ limit: LIMITS.MAX_BODY_BYTES }));
-app.use(rateLimiter);
 
-// Static Asset Serving
+// Static Asset Serving (served before API rate limiting and body parsing)
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   maxAge: '1h',
-  setHeaders: (res) => {
+  setHeaders: (res, filePath) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    }
   },
 }));
+
+// Dynamic CORS allowlist with wildcard, localhost, and onrender.com support
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'https://respiro-2-0.onrender.com',
+];
+
+if (process.env.ALLOWED_ORIGIN) {
+  ALLOWED_ORIGINS.push(...process.env.ALLOWED_ORIGIN.split(',').map((o) => o.trim()));
+}
+if (process.env.ALLOWED_ORIGINS) {
+  ALLOWED_ORIGINS.push(...process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()));
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Direct requests, curl, or server-to-server
+    if (!origin) return callback(null, true);
+
+    if (
+      ALLOWED_ORIGINS.includes('*') ||
+      ALLOWED_ORIGINS.includes(origin) ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.web.app') ||
+      origin.endsWith('.firebaseapp.com')
+    ) {
+      return callback(null, true);
+    }
+    // Return null, false to safely deny CORS without throwing 500 error
+    return callback(null, false);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+}));
+
+app.use(validatePayloadSize);
+app.use(express.json({ limit: LIMITS.MAX_BODY_BYTES }));
+app.use(rateLimiter);
 
 // API Routes
 
