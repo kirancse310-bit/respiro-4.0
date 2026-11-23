@@ -75,8 +75,12 @@ export function setupCommunityView() {
         await api.submitPledge({ name, locality, action, co2SavedKg });
         /** @type {HTMLFormElement} */ (pledgeForm).reset();
         await loadData();
+        const announcer = document.getElementById('aria-live-announcer');
+        if (announcer) announcer.textContent = 'Pledge recorded successfully.';
       } catch (err) {
-        alert(err.message);
+        const announcer = document.getElementById('aria-live-announcer');
+        if (announcer) announcer.textContent = `Pledge submission error: ${err.message}`;
+        console.error('Pledge submission failed:', err.message);
       }
     });
   }
@@ -92,8 +96,12 @@ export function setupCommunityView() {
         await api.submitIncident({ reporter, locality, type });
         /** @type {HTMLFormElement} */ (incidentForm).reset();
         await loadData();
+        const announcer = document.getElementById('aria-live-announcer');
+        if (announcer) announcer.textContent = 'Incident report submitted and logged.';
       } catch (err) {
-        alert(err.message);
+        const announcer = document.getElementById('aria-live-announcer');
+        if (announcer) announcer.textContent = `Incident report error: ${err.message}`;
+        console.error('Incident submission failed:', err.message);
       }
     });
   }

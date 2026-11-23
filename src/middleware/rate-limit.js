@@ -38,3 +38,20 @@ export function rateLimiter(req, res, next) {
   ipHits.set(ip, timestamps);
   next();
 }
+
+/**
+ * Periodically purges expired IP entries to prevent memory exhaustion (CWE-400).
+ */
+if (process.env.NODE_ENV !== 'test') {
+  setInterval(() => {
+    const cutoff = Date.now() - LIMITS.RATE_LIMIT_WINDOW_MS;
+    for (const [ip, timestamps] of ipHits.entries()) {
+      const active = timestamps.filter((t) => t > cutoff);
+      if (active.length === 0) {
+        ipHits.delete(ip);
+      } else {
+        ipHits.set(ip, active);
+      }
+    }
+  }, 5 * 60 * 1000).unref();
+}

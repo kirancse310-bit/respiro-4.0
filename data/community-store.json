@@ -1,0 +1,62 @@
+{
+  "pledges": [
+    {
+      "id": "p_1795455703802",
+      "name": "Sunita Mehra",
+      "locality": "Indirapuram",
+      "action": "Pledged zero open garbage burning this winter",
+      "co2SavedKg": 25,
+      "timestamp": "2026-11-23T17:41:43.802Z"
+    },
+    {
+      "id": "p1",
+      "name": "Rajesh K.",
+      "locality": "Mayur Vihar, Delhi",
+      "action": "Switched 15km daily commute from motorbike to Metro",
+      "co2SavedKg": 12.5,
+      "timestamp": "2026-11-23T16:41:40.842Z"
+    },
+    {
+      "id": "p2",
+      "name": "Pooja S.",
+      "locality": "Indirapuram, Ghaziabad",
+      "action": "Built DIY Corsi-Rosenthal box for society club room",
+      "co2SavedKg": 5,
+      "timestamp": "2026-11-23T15:41:40.843Z"
+    },
+    {
+      "id": "p3",
+      "name": "Amit V.",
+      "locality": "Sector 62, Noida",
+      "action": "Pledged zero open leaf/waste burning this winter",
+      "co2SavedKg": 20,
+      "timestamp": "2026-11-23T13:41:40.843Z"
+    }
+  ],
+  "incidents": [
+    {
+      "id": "i_1795455703830",
+      "reporter": "Citizen Eye",
+      "locality": "NH24 Ghazipur Border",
+      "type": "Open municipal plastic burning",
+      "status": "Logged & Escalated to Local Ward Office",
+      "timestamp": "2026-11-23T17:41:43.830Z"
+    },
+    {
+      "id": "i1",
+      "reporter": "Citizen Watch",
+      "locality": "Anand Vihar",
+      "type": "Open biomass/leaf burning",
+      "status": "Reported to Municipal Corp",
+      "timestamp": "2026-11-23T16:11:40.843Z"
+    },
+    {
+      "id": "i2",
+      "reporter": "EcoGuard",
+      "locality": "Wazirpur Industrial Area",
+      "type": "Uncovered construction dust",
+      "status": "Water sprinkling requested",
+      "timestamp": "2026-11-23T14:41:40.843Z"
+    }
+  ]
+}

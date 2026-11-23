@@ -25,12 +25,20 @@
  * @property {string} timestamp - ISO-8601 reporting timestamp.
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_FILE = path.join(__dirname, '..', '..', 'data', 'community-store.json');
+
 /**
- * In-memory repository for community pledges and smog incident tracking.
+ * In-memory repository with file-backed persistence for community pledges and smog incident tracking.
  */
 class CommunityStore {
   /**
-   * Initializes the community store with baseline historical records.
+   * Initializes the community store, loading persisted records from disk if present.
    */
   constructor() {
     /** @type {Array<CommunityPledge>} */
@@ -45,6 +53,48 @@ class CommunityStore {
       { id: 'i1', reporter: 'Citizen Watch', locality: 'Anand Vihar', type: 'Open biomass/leaf burning', status: 'Reported to Municipal Corp', timestamp: new Date(Date.now() - 5400000).toISOString() },
       { id: 'i2', reporter: 'EcoGuard', locality: 'Wazirpur Industrial Area', type: 'Uncovered construction dust', status: 'Water sprinkling requested', timestamp: new Date(Date.now() - 10800000).toISOString() },
     ];
+
+    this.loadFromDisk();
+  }
+
+  /**
+   * Loads persisted data from disk if the store file exists.
+   * @private
+   */
+  loadFromDisk() {
+    try {
+      if (fs.existsSync(DATA_FILE)) {
+        const raw = fs.readFileSync(DATA_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.pledges) && parsed.pledges.length > 0) {
+          this.pledges = parsed.pledges;
+        }
+        if (Array.isArray(parsed.incidents) && parsed.incidents.length > 0) {
+          this.incidents = parsed.incidents;
+        }
+      }
+    } catch {
+      // Graceful fallback to default in-memory seeds on read error
+    }
+  }
+
+  /**
+   * Persists current state to disk asynchronously.
+   * @private
+   */
+  saveToDisk() {
+    try {
+      const dir = path.dirname(DATA_FILE);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(DATA_FILE, JSON.stringify({
+        pledges: this.pledges,
+        incidents: this.incidents,
+      }, null, 2), 'utf8');
+    } catch {
+      // Non-blocking disk write failure safeguard
+    }
   }
 
   /**
@@ -77,6 +127,7 @@ class CommunityStore {
     };
     this.pledges.unshift(item);
     if (this.pledges.length > 50) this.pledges.pop();
+    this.saveToDisk();
     return item;
   }
 
@@ -109,6 +160,7 @@ class CommunityStore {
     };
     this.incidents.unshift(item);
     if (this.incidents.length > 50) this.incidents.pop();
+    this.saveToDisk();
     return item;
   }
 }

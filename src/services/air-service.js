@@ -44,6 +44,63 @@ export const TYPICAL_INDIAN_CITIES = {
 const cache = new Map();
 
 /**
+ * In-memory geocoder cache mapping city query strings to coordinates.
+ * @type {Map<string, { timestamp: number, data: CityBaseline }>}
+ */
+const geoCache = new Map();
+
+/**
+ * Resolves geographic coordinates for a given city query using Open-Meteo Geocoding API
+ * with in-memory caching and fallback to predefined Indian urban centers.
+ *
+ * @param {string} cityName - Name of target city or locality.
+ * @returns {Promise<CityBaseline>} Resolved coordinates and baseline telemetry.
+ */
+export async function resolveCityCoordinates(cityName) {
+  const normalizedKey = cityName.toLowerCase().trim();
+  if (TYPICAL_INDIAN_CITIES[normalizedKey]) {
+    return TYPICAL_INDIAN_CITIES[normalizedKey];
+  }
+
+  const cachedGeo = geoCache.get(normalizedKey);
+  const now = Date.now();
+  if (cachedGeo && now - cachedGeo.timestamp < LIMITS.CACHE_GEO_TTL_MS) {
+    return cachedGeo.data;
+  }
+
+  try {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(geoUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const geoJson = await res.json();
+      if (geoJson.results && geoJson.results.length > 0) {
+        const top = geoJson.results[0];
+        const resolved = {
+          name: `${top.name}${top.admin1 ? ` (${top.admin1})` : ''}`,
+          lat: Number(top.latitude.toFixed(4)),
+          lon: Number(top.longitude.toFixed(4)),
+          pm2_5: TYPICAL_INDIAN_CITIES.delhi.pm2_5,
+          pm10: TYPICAL_INDIAN_CITIES.delhi.pm10,
+          no2: TYPICAL_INDIAN_CITIES.delhi.no2,
+          co: TYPICAL_INDIAN_CITIES.delhi.co,
+          o3: TYPICAL_INDIAN_CITIES.delhi.o3,
+        };
+        geoCache.set(normalizedKey, { timestamp: now, data: resolved });
+        return resolved;
+      }
+    }
+  } catch {
+    // Graceful geocoding network error fallback
+  }
+
+  return TYPICAL_INDIAN_CITIES.delhi;
+}
+
+/**
  * @typedef {Object} HourlyForecastPoint
  * @property {string} hour - Formatted 24-hr time label (HH:MM).
  * @property {number} pm25 - Expected PM2.5 concentration in µg/m³.
@@ -84,8 +141,8 @@ export async function fetchLiveAirQuality(cityName = 'Delhi') {
     return { ...cached.data, source: 'edge-cache' };
   }
 
-  // Find city coordinate baseline
-  const matched = TYPICAL_INDIAN_CITIES[normalizedKey] || TYPICAL_INDIAN_CITIES.delhi;
+  // Find or dynamically geocode city coordinate baseline
+  const matched = await resolveCityCoordinates(cityName);
 
   try {
     const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${matched.lat}&longitude=${matched.lon}&current=pm10,pm2_5,nitrogen_dioxide,carbon_monoxide,ozone,us_aqi&hourly=pm2_5,pm10,us_aqi&timezone=auto&forecast_days=2`;

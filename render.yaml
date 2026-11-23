@@ -12,6 +12,6 @@ services:
       - key: PORT
         value: 10000
       - key: ALLOWED_ORIGIN
-        value: '*'
+        value: 'https://respiro-2-0.onrender.com'
       - key: GEMINI_API_KEY
         sync: false

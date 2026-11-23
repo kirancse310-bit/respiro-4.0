@@ -104,26 +104,22 @@ if (process.env.ALLOWED_ORIGINS) {
 app.use(cors({
   /**
    * Origin validator callback for incoming CORS requests.
+   * Restricts cross-origin calls to explicit allowed origins and local development hosts.
+   *
    * @param {string|undefined} origin - Origin header value.
    * @param {Function} callback - Node/CORS callback (err, allow).
    */
   origin: (origin, callback) => {
-    // Direct requests, curl, or server-to-server
+    // Direct server-to-server, curl, mobile, or same-origin requests
     if (!origin) return callback(null, true);
 
-    if (
-      ALLOWED_ORIGINS.includes('*') ||
-      ALLOWED_ORIGINS.includes(origin) ||
-      origin.startsWith('http://localhost:') ||
-      origin.startsWith('http://127.0.0.1:') ||
-      origin.endsWith('.onrender.com') ||
-      origin.endsWith('.vercel.app') ||
-      origin.endsWith('.web.app') ||
-      origin.endsWith('.firebaseapp.com')
-    ) {
+    const isLocalDev = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+    const isExplicitlyAllowed = ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin);
+
+    if (isExplicitlyAllowed || isLocalDev) {
       return callback(null, true);
     }
-    // Return null, false to safely deny CORS without throwing 500 error
+    // Deny unauthorized cross-origin requests safely
     return callback(null, false);
   },
   methods: ['GET', 'POST', 'OPTIONS'],

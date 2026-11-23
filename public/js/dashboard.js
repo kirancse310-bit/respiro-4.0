@@ -164,7 +164,7 @@ export function renderDashboard(data) {
         ${data.hourlyForecast.map((h) => `
           <div class="timeline-cell">
             <div class="timeline-hour">${h.hour}</div>
-            <div class="timeline-pm" style="color: ${h.pm25 > 150 ? '#ef4444' : h.pm25 > 60 ? '#f97316' : '#10b981'};">${h.pm25}</div>
+            <div class="timeline-pm" style="color: ${h.pm25 > 150 ? '#ef4444' : h.pm25 > 60 ? '#c2410c' : '#047857'}; font-weight: 800;">${h.pm25}</div>
             <div style="font-size: 0.7rem; color: var(--text-dim);">µg/m³</div>
           </div>
         `).join('')}

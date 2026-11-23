@@ -20,6 +20,8 @@ export const IMPACT_FACTORS = {
   CLEAN_ROOM_REDUCTION: { value: 0.65, provenance: 'Published: EPA Clean Air Rooms in Smog Guidance' },
   // 150cc petrol 2-wheeler tailpipe PM2.5 per km
   TWO_WHEELER_PM25_G_PER_KM: { value: 0.05, provenance: 'Published: ARAI / CPCB Emission Norms' },
+  // 4-Stroke CNG Auto-rickshaw tailpipe PM2.5 per km
+  AUTO_RICKSHAW_PM25_G_PER_KM: { value: 0.02, provenance: 'Published: ARAI / CPCB 4-Stroke CNG Auto Norms' },
   // Small petrol car CO2e per km
   PETROL_CAR_CO2E_KG_PER_KM: { value: 0.14, provenance: 'Published: CEA India CO2 Baseline' },
   // Electric Metro CO2e savings per passenger-km compared to private car
@@ -80,6 +82,7 @@ export function calculateAvoidedEmissions(dailyCommuteKm, currentMode, targetMod
   const weeklyKm = dailyCommuteKm * daysPerWeek;
   let pm25SavedG = 0;
   let co2eSavedKg = 0;
+  let factorProvenance = `${IMPACT_FACTORS.TWO_WHEELER_PM25_G_PER_KM.provenance} & ${IMPACT_FACTORS.METRO_CO2E_SAVED_KG_PER_KM.provenance}`;
 
   if (currentMode === 'two_wheeler' && targetMode === 'metro') {
     pm25SavedG = weeklyKm * IMPACT_FACTORS.TWO_WHEELER_PM25_G_PER_KM.value;
@@ -87,13 +90,18 @@ export function calculateAvoidedEmissions(dailyCommuteKm, currentMode, targetMod
   } else if (currentMode === 'car' && targetMode === 'metro') {
     pm25SavedG = weeklyKm * 0.03;
     co2eSavedKg = weeklyKm * IMPACT_FACTORS.METRO_CO2E_SAVED_KG_PER_KM.value;
+    factorProvenance = `${IMPACT_FACTORS.PETROL_CAR_CO2E_KG_PER_KM.provenance} & ${IMPACT_FACTORS.METRO_CO2E_SAVED_KG_PER_KM.provenance}`;
+  } else if (currentMode === 'auto' && targetMode === 'metro') {
+    pm25SavedG = weeklyKm * IMPACT_FACTORS.AUTO_RICKSHAW_PM25_G_PER_KM.value;
+    co2eSavedKg = weeklyKm * 0.06; // 60g CO2e/km differential vs shared CNG auto
+    factorProvenance = `${IMPACT_FACTORS.AUTO_RICKSHAW_PM25_G_PER_KM.provenance} & ${IMPACT_FACTORS.METRO_CO2E_SAVED_KG_PER_KM.provenance}`;
   }
 
   return {
     weeklyKm,
     pm25SavedG: Number(pm25SavedG.toFixed(1)),
     co2eSavedKg: Number(co2eSavedKg.toFixed(1)),
-    provenance: `${IMPACT_FACTORS.TWO_WHEELER_PM25_G_PER_KM.provenance} & ${IMPACT_FACTORS.METRO_CO2E_SAVED_KG_PER_KM.provenance}`,
+    provenance: factorProvenance,
   };
 }
 
@@ -138,10 +146,30 @@ export function generateComputedFacts(profile, airData) {
     { label: 'Commute Distance', value: String(profile.commuteKm || 12), unit: 'km', type: 'user_input' },
   ];
 
+  if (airData.cleanestHour) {
+    factsList.push({ label: 'Cleanest Outdoor Window', value: airData.cleanestHour, unit: 'hrs', type: 'measured' });
+  }
+  if (airData.worstHour) {
+    factsList.push({ label: 'Peak Smog Window', value: airData.worstHour, unit: 'hrs', type: 'measured' });
+  }
+
   // Set of allowed numbers for the number firewall
   const allowedNumbers = new Set(factsList.map((f) => f.value));
-  // Add common safe standard integers
-  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '24', '60', '80', '90', '95', '99', '100'].forEach((n) => allowedNumbers.add(n));
+  
+  // Add clock hours (0 to 24) and common intervals/percentages to prevent false-positive rejection of timing schedules
+  for (let h = 0; h <= 24; h++) {
+    allowedNumbers.add(String(h));
+  }
+  ['0', '15', '30', '45', '60', '70', '75', '80', '85', '90', '95', '99', '100'].forEach((n) => allowedNumbers.add(n));
+  
+  if (airData.cleanestPm25 != null) allowedNumbers.add(String(airData.cleanestPm25));
+  if (airData.worstPm25 != null) allowedNumbers.add(String(airData.worstPm25));
+  if (airData.cleanestHour) {
+    airData.cleanestHour.split(':').forEach((part) => allowedNumbers.add(String(Number(part))));
+  }
+  if (airData.worstHour) {
+    airData.worstHour.split(':').forEach((part) => allowedNumbers.add(String(Number(part))));
+  }
 
   return {
     facts: factsList,

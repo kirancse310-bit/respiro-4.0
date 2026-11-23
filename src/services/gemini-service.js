@@ -100,7 +100,7 @@ function generateDeterministicPlan(factsPayload, profile, airData) {
 }
 
 /**
- * Optimizes an urban routine using Gemini 3.1 Flash Lite with verified deterministic facts and Number Firewall.
+ * Optimizes an urban routine using Gemini 2.0 Flash with verified deterministic facts and Number Firewall.
  *
  * @param {Object} profile - Household vulnerability and commute profile.
  * @param {Object} airData - Live or baseline air quality telemetry.
@@ -148,7 +148,7 @@ Instructions:
   ]
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
 
@@ -197,7 +197,7 @@ Instructions:
       summary: parsed.summary,
       routines: parsed.routines,
       facts: factsPayload.facts,
-      engineSource: 'gemini-2.5-flash-grounded',
+      engineSource: 'gemini-2.0-flash-grounded',
     };
 
     pruneCache();
