@@ -1,16 +1,27 @@
 /**
- * Community Smog Defense & Watch Controller.
- * Handles emission pledges and crowdsourced smog incident reporting.
+ * @fileoverview Community Smog Defense & Watch Controller.
+ * Handles emission pledges, crowdsourced smog incident reporting, and real-time DOM updates.
+ * @module community-view
  */
 
 import { api } from './api.js';
 
+/**
+ * Initializes the Community Smog Defense view, sets up async form submit handlers
+ * for pledges and incidents, and renders active collective actions.
+ *
+ * @returns {void}
+ */
 export function setupCommunityView() {
   const pledgesList = document.getElementById('community-pledges-list');
   const incidentsList = document.getElementById('community-incidents-list');
   const pledgeForm = document.getElementById('pledge-form');
   const incidentForm = document.getElementById('incident-form');
 
+  /**
+   * Fetches latest community pledges and incidents and updates DOM lists.
+   * @returns {Promise<void>}
+   */
   const loadData = async () => {
     try {
       const [pledges, incidents] = await Promise.all([
@@ -55,14 +66,14 @@ export function setupCommunityView() {
   if (pledgeForm) {
     pledgeForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('pledge-name').value;
-      const locality = document.getElementById('pledge-locality').value;
-      const action = document.getElementById('pledge-action').value;
-      const co2SavedKg = Number(document.getElementById('pledge-co2').value) || 10;
+      const name = /** @type {HTMLInputElement} */ (document.getElementById('pledge-name')).value;
+      const locality = /** @type {HTMLInputElement} */ (document.getElementById('pledge-locality')).value;
+      const action = /** @type {HTMLInputElement} */ (document.getElementById('pledge-action')).value;
+      const co2SavedKg = Number(/** @type {HTMLInputElement} */ (document.getElementById('pledge-co2')).value) || 10;
 
       try {
         await api.submitPledge({ name, locality, action, co2SavedKg });
-        pledgeForm.reset();
+        /** @type {HTMLFormElement} */ (pledgeForm).reset();
         await loadData();
       } catch (err) {
         alert(err.message);
@@ -73,13 +84,13 @@ export function setupCommunityView() {
   if (incidentForm) {
     incidentForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const reporter = document.getElementById('incident-reporter').value;
-      const locality = document.getElementById('incident-locality').value;
-      const type = document.getElementById('incident-type').value;
+      const reporter = /** @type {HTMLInputElement} */ (document.getElementById('incident-reporter')).value;
+      const locality = /** @type {HTMLInputElement} */ (document.getElementById('incident-locality')).value;
+      const type = /** @type {HTMLInputElement} */ (document.getElementById('incident-type')).value;
 
       try {
         await api.submitIncident({ reporter, locality, type });
-        incidentForm.reset();
+        /** @type {HTMLFormElement} */ (incidentForm).reset();
         await loadData();
       } catch (err) {
         alert(err.message);

@@ -1,10 +1,25 @@
 /**
- * In-memory sliding window rate limiter middleware.
+ * @fileoverview In-memory sliding-window rate limiter middleware.
+ * Prevents endpoint exhaustion, brute-force requests, and unauthorized LLM abuse.
+ * @module rate-limit
  */
+
 import { LIMITS } from '../config/limits.js';
 
+/**
+ * In-memory map associating IP addresses with request timestamp arrays.
+ * @type {Map<string, Array<number>>}
+ */
 const ipHits = new Map();
 
+/**
+ * Express middleware enforcing sliding-window rate limiting per client IP address.
+ *
+ * @param {import('express').Request} req - Inbound Express request object.
+ * @param {import('express').Response} res - Outbound Express response object.
+ * @param {import('express').NextFunction} next - Express next middleware function.
+ * @returns {void|import('express').Response} Continues chain or halts with HTTP 429.
+ */
 export function rateLimiter(req, res, next) {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();

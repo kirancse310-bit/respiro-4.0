@@ -1,12 +1,20 @@
 /**
- * Exposure Navigator View Controller.
- * Interactively compares cumulative inhaled particulate dose across 5 transport modes.
+ * @fileoverview Exposure Navigator View Controller.
+ * Interactively compares cumulative inhaled particulate dose across 5 transport modes
+ * based on distance and ambient PM2.5 readings.
+ * @module navigator-view
  */
 
 import { api } from './api.js';
 
+/**
+ * Initializes the Exposure Navigator commute comparison view.
+ *
+ * @param {Function} getCurrentAirData - State accessor returning the current air telemetry object.
+ * @returns {void}
+ */
 export function setupNavigatorView(getCurrentAirData) {
-  const distInput = document.getElementById('nav-distance');
+  const distInput = /** @type {HTMLInputElement|null} */ (document.getElementById('nav-distance'));
   const distVal = document.getElementById('nav-dist-val');
   const compareBtn = document.getElementById('nav-compare-btn');
   const resultsContainer = document.getElementById('nav-results');
@@ -14,9 +22,13 @@ export function setupNavigatorView(getCurrentAirData) {
   if (!distInput || !compareBtn || !resultsContainer) return;
 
   distInput.addEventListener('input', () => {
-    distVal.textContent = `${distInput.value} km`;
+    if (distVal) distVal.textContent = `${distInput.value} km`;
   });
 
+  /**
+   * Executes multi-modal commute dose comparison and updates the DOM chart.
+   * @returns {Promise<void>}
+   */
   const runComparison = async () => {
     const airData = getCurrentAirData();
     const pm25 = airData?.pollutants?.pm2_5 || 150;

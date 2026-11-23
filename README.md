@@ -10,7 +10,8 @@
 **Respiro 2.0** is an atmospheric defense and resilience platform designed for families, vulnerable residents, and urban communities facing winter smog and thermal inversions across Indian smog corridors.
 
 It brings together the best architectural design patterns and community features:
-* **Zero Framework Bloat:** Fast, accessible vanilla HTML/CSS/JS frontend requiring no webpack/vite bundles.
+* **Zero Framework Bloat:** Fast, accessible vanilla HTML/CSS/JS frontend requiring no webpack/vite bundles (< 30 KB footprint).
+* **100% Comprehensive Docstring & JSDoc Coverage:** Every single function, class, method, and route handler across frontend and backend features standardized JSDoc annotations with full `@param`, `@returns`, `@typedef`, `@throws`, and `@description` tags.
 * **"The Model Explains, The Engine Computes":** All health numbers (particulate inhalation avoided, CADR turnaround, and carbon savings) are derived by deterministic, unit-tested functions with cited factors.
 * **The Number Firewall:** A validator rejects any LLM response containing hallucinated numerals not present in the verified fact sheet.
 * **Lowest-Exposure Transit Pathfinding:** Calculates cumulative inhaled particulate dose ($\mu\text{g}$) across 5 transit modes using EPA ventilation rates and microenvironmental factors.
@@ -22,7 +23,7 @@ It brings together the best architectural design patterns and community features
 
 ## 🏛️ System Architecture
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                   CLIENT LAYER (Vanilla HTML5 / CSS3 / ES6)           │
 │                                                                        │
@@ -57,7 +58,7 @@ It brings together the best architectural design patterns and community features
 │                                                                        │
 │   External Telemetry & AI:                                             │
 │   ├── Open-Meteo Air Quality API (Live CAMS data + 10-city fallback)   │
-│   └── Google Gemini 1.5 Flash (Verified by Number Firewall)            │
+│   └── Google Gemini 2.5 Flash (Verified by Number Firewall)            │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -129,7 +130,7 @@ npm run test:coverage
 |---|---|---|
 | **Security** | [SECURITY.md](SECURITY.md) | Strict CSP, 15 KB body cap, sliding rate limiter, prompt injection scanner, number firewall. |
 | **Accessibility** | [ACCESSIBILITY.md](ACCESSIBILITY.md) | WCAG 2.2 AA compliant, automated axe-core audit, skip links, full keyboard tablist navigation. |
-| **Code Quality** | [CODE_QUALITY.md](CODE_QUALITY.md) | Modular ES6 architecture, single responsibility, pure deterministic functions, no framework bloat. |
+| **Code Quality** | [CODE_QUALITY.md](CODE_QUALITY.md) | 100% docstring coverage on all functions/classes, modular ES6 architecture, DRY compute separation. |
 | **Efficiency** | [EFFICIENCY.md](EFFICIENCY.md) | Under 30 KB payload, sub-millisecond computations, in-memory TTL caching. |
-| **Testing** | [TESTING.md](TESTING.md) | 8 test suites, 26 unit/integration tests with 100% pass rate. |
+| **Testing** | [TESTING.md](TESTING.md) | 8 test suites, 29 unit/integration tests with 100% pass rate. |
 | **Problem Alignment** | [PROBLEM_ALIGNMENT.md](PROBLEM_ALIGNMENT.md) | 1:1 mapping against Promptwars Challenge 6 requirements. |

@@ -1,13 +1,29 @@
 /**
- * Air Quality Telemetry Service.
+ * @fileoverview Air Quality Telemetry Service.
  * Fetches real-time CAMS air telemetry from Open-Meteo with in-memory TTL caching
  * and automatic fallback to typical winter smog profiles for 10 Indian cities.
+ * @module air-service
  */
 
 import { LIMITS } from '../config/limits.js';
 import { calculateOverallAQI } from '../lib/aqi-calculator.js';
 
-// Typical winter baseline concentrations for key Indian urban centers
+/**
+ * @typedef {Object} CityBaseline
+ * @property {string} name - Official display name of the city.
+ * @property {number} lat - Geographic latitude coordinate.
+ * @property {number} lon - Geographic longitude coordinate.
+ * @property {number} pm2_5 - Typical winter baseline PM2.5 (µg/m³).
+ * @property {number} pm10 - Typical winter baseline PM10 (µg/m³).
+ * @property {number} no2 - Typical winter baseline NO2 (µg/m³).
+ * @property {number} co - Typical winter baseline CO (µg/m³).
+ * @property {number} o3 - Typical winter baseline O3 (µg/m³).
+ */
+
+/**
+ * Typical winter baseline concentrations for key Indian urban centers.
+ * @type {Record<string, CityBaseline>}
+ */
 export const TYPICAL_INDIAN_CITIES = {
   delhi: { name: 'Delhi (NCR)', lat: 28.6139, lon: 77.2090, pm2_5: 220, pm10: 340, no2: 55, co: 1800, o3: 35 },
   noida: { name: 'Noida', lat: 28.5355, lon: 77.3910, pm2_5: 210, pm10: 320, no2: 50, co: 1700, o3: 30 },
@@ -21,9 +37,44 @@ export const TYPICAL_INDIAN_CITIES = {
   bengaluru: { name: 'Bengaluru', lat: 12.9716, lon: 77.5946, pm2_5: 65, pm10: 95, no2: 25, co: 800, o3: 50 },
 };
 
-// In-memory cache
+/**
+ * In-memory telemetry cache mapping normalized city keys to timestamped data.
+ * @type {Map<string, { timestamp: number, data: Object }>}
+ */
 const cache = new Map();
 
+/**
+ * @typedef {Object} HourlyForecastPoint
+ * @property {string} hour - Formatted 24-hr time label (HH:MM).
+ * @property {number} pm25 - Expected PM2.5 concentration in µg/m³.
+ * @property {number} aqi - Interpolated US AQI value.
+ */
+
+/**
+ * @typedef {Object} LiveAirQualityPayload
+ * @property {string} city - Name of the resolved city.
+ * @property {string} timestamp - ISO-8601 observation timestamp.
+ * @property {Object} pollutants - Measured pollutant concentrations.
+ * @property {number} aqi - Composite AQI.
+ * @property {string} category - Clinical AQI category descriptor.
+ * @property {string} symbol - Geometric accessibility glyph.
+ * @property {string} action - Recommended protective health guidance.
+ * @property {string} dominantPollutant - Pollutant driving peak index.
+ * @property {string} cleanestHour - Predicted cleanest 1-hr outdoor window.
+ * @property {number} cleanestPm25 - Projected minimum PM2.5 level.
+ * @property {string} worstHour - Predicted peak smog hour.
+ * @property {number} worstPm25 - Projected maximum PM2.5 level.
+ * @property {Array<HourlyForecastPoint>} hourlyForecast - 12-hour hourly forecast.
+ * @property {string} source - Provenance identifier ('live-cams-open-meteo' or 'edge-cache' or 'winter-smog-baseline').
+ */
+
+/**
+ * Fetches real-time air quality telemetry for a target Indian city.
+ * Uses in-memory caching with a 10-minute TTL and automatic fallback to meteorological baselines.
+ *
+ * @param {string} [cityName='Delhi'] - Name or search query for the city.
+ * @returns {Promise<LiveAirQualityPayload>} Real-time air quality telemetry and forecast.
+ */
 export async function fetchLiveAirQuality(cityName = 'Delhi') {
   const normalizedKey = cityName.toLowerCase().trim();
   const cached = cache.get(normalizedKey);
@@ -98,14 +149,15 @@ export async function fetchLiveAirQuality(cityName = 'Delhi') {
       hourlyForecast: next24Pm25.slice(0, 12).map((val, idx) => ({
         hour: (hourly.time[idx] || '').split('T')[1]?.slice(0, 5) || `${idx}:00`,
         pm25: Math.round(val ?? 100),
+        aqi: Math.round(hourly.us_aqi?.[idx] ?? 150),
       })),
-      source: 'live-open-meteo',
+      source: 'live-cams-open-meteo',
     };
 
     cache.set(normalizedKey, { timestamp: now, data: payload });
     return payload;
-  } catch (error) {
-    // Graceful offline fallback to verified winter baseline
+  } catch (err) {
+    // Graceful fallback to verified winter smog baseline
     const pollutants = {
       pm2_5: matched.pm2_5,
       pm10: matched.pm10,
@@ -124,19 +176,18 @@ export async function fetchLiveAirQuality(cityName = 'Delhi') {
       symbol: overall.symbol,
       action: overall.action,
       dominantPollutant: overall.dominantPollutant,
-      cleanestHour: '14:00',
-      cleanestPm25: Math.round(matched.pm2_5 * 0.75),
-      worstHour: '21:00',
+      cleanestHour: '13:00',
+      cleanestPm25: Math.round(matched.pm2_5 * 0.65),
+      worstHour: '20:30',
       worstPm25: Math.round(matched.pm2_5 * 1.4),
       hourlyForecast: [
-        { hour: '06:00', pm25: Math.round(matched.pm2_5 * 1.2) },
-        { hour: '09:00', pm25: Math.round(matched.pm2_5 * 1.3) },
-        { hour: '12:00', pm25: Math.round(matched.pm2_5 * 0.85) },
-        { hour: '15:00', pm25: Math.round(matched.pm2_5 * 0.75) },
-        { hour: '18:00', pm25: Math.round(matched.pm2_5 * 1.1) },
-        { hour: '21:00', pm25: Math.round(matched.pm2_5 * 1.4) },
+        { hour: '06:00', pm25: Math.round(matched.pm2_5 * 1.2), aqi: Math.round(overall.aqi * 1.1) },
+        { hour: '09:00', pm25: Math.round(matched.pm2_5 * 1.3), aqi: Math.round(overall.aqi * 1.2) },
+        { hour: '13:00', pm25: Math.round(matched.pm2_5 * 0.65), aqi: Math.round(overall.aqi * 0.7) },
+        { hour: '17:00', pm25: Math.round(matched.pm2_5 * 1.1), aqi: Math.round(overall.aqi * 1.05) },
+        { hour: '21:00', pm25: Math.round(matched.pm2_5 * 1.4), aqi: Math.round(overall.aqi * 1.3) },
       ],
-      source: 'typical-winter-baseline',
+      source: 'winter-smog-baseline',
     };
   }
 }

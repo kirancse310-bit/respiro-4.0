@@ -1,9 +1,14 @@
 /**
- * Deterministic Environmental & Health Impact Calculator.
- * Philosophy: "The model explains, the engine computes."
- * All numbers are produced by pure unit-tested functions with verified provenance.
+ * @fileoverview Deterministic Environmental & Health Impact Calculator.
+ * Core Philosophy: "The model explains, the engine computes."
+ * All numbers are produced by pure unit-tested mathematical functions with verified scientific provenance.
+ * @module impact-calculator
  */
 
+/**
+ * Empirical constants with scientific citations for inhalation and emission calculations.
+ * @type {Readonly<Object>}
+ */
 export const IMPACT_FACTORS = {
   // WHO: Daily mean adult ventilation volume ~ 15 m³/day (0.0104 m³/min)
   ADULT_DAILY_INHALATION_M3: { value: 15.0, provenance: 'Published: WHO Air Quality Guidelines' },
@@ -22,7 +27,21 @@ export const IMPACT_FACTORS = {
 };
 
 /**
- * Compute daily PM2.5 particulate mass avoided from inhalation (µg/day)
+ * @typedef {Object} InhalationAvoidanceResult
+ * @property {number} rawExposureUg - Estimated total potential inhaled dose without mitigation.
+ * @property {number} avoidedInhalationUg - Mass of particulate deposition prevented.
+ * @property {number} reductionPercent - Percentage exposure reduction achieved.
+ * @property {string} provenance - Academic citation backing the mitigation ratio.
+ */
+
+/**
+ * Computes daily PM2.5 particulate mass avoided from inhalation (µg/day) based on lifestyle factors.
+ *
+ * @param {number} pm25Concentration - Ambient 24-hr PM2.5 concentration in µg/m³.
+ * @param {number} outdoorHours - Number of hours spent in ambient outdoor air.
+ * @param {boolean} hasChildOrElder - Whether the profile includes children or elderly individuals.
+ * @param {boolean} usesN95 - Whether a certified N95 respirator is utilized during outdoor exposure.
+ * @returns {InhalationAvoidanceResult} Particulate inhalation avoidance payload.
  */
 export function calculateAvoidedInhalation(pm25Concentration, outdoorHours, hasChildOrElder, usesN95) {
   const hourlyVentilation = (hasChildOrElder ? 0.75 : 0.625); // m³/hour
@@ -41,7 +60,21 @@ export function calculateAvoidedInhalation(pm25Concentration, outdoorHours, hasC
 }
 
 /**
- * Compute weekly emissions avoided by shifting to sustainable commute (g PM2.5 and kg CO2e)
+ * @typedef {Object} AvoidedEmissionsResult
+ * @property {number} weeklyKm - Total commute distance travelled per week.
+ * @property {number} pm25SavedG - Grams of direct tailpipe PM2.5 prevented from entering the airshed.
+ * @property {number} co2eSavedKg - Kilograms of carbon dioxide equivalent greenhouse gases avoided.
+ * @property {string} provenance - Scientific/regulatory citation for the emission factors.
+ */
+
+/**
+ * Computes weekly emissions avoided by shifting to sustainable public transit (g PM2.5 and kg CO2e).
+ *
+ * @param {number} dailyCommuteKm - Single-day one-way commute distance in kilometers.
+ * @param {('two_wheeler'|'car'|'metro')} currentMode - Baseline transport modality.
+ * @param {('metro'|'ev')} [targetMode='metro'] - Targeted clean transit modality.
+ * @param {number} [daysPerWeek=5] - Commute days per work week.
+ * @returns {AvoidedEmissionsResult} Avoided emissions breakdown.
  */
 export function calculateAvoidedEmissions(dailyCommuteKm, currentMode, targetMode = 'metro', daysPerWeek = 5) {
   const weeklyKm = dailyCommuteKm * daysPerWeek;
@@ -65,7 +98,32 @@ export function calculateAvoidedEmissions(dailyCommuteKm, currentMode, targetMod
 }
 
 /**
- * Assemble a complete deterministic facts sheet for a user profile
+ * @typedef {Object} ComputedFact
+ * @property {string} label - Descriptive title of the statistical datum.
+ * @property {string} value - String representation of the verified numeric figure.
+ * @property {string} unit - Measurement unit (e.g. 'µg/day', 'g/week').
+ * @property {('measured'|'computed'|'user_input')} type - Provenance classification of the fact.
+ */
+
+/**
+ * @typedef {Object} ComputedFactsPayload
+ * @property {Array<ComputedFact>} facts - Array of verified facts suitable for LLM context grounding.
+ * @property {Set<string>} allowedNumbers - Allowlist of verified numbers for the Number Firewall.
+ * @property {InhalationAvoidanceResult} inhalation - Inhalation calculation details.
+ * @property {AvoidedEmissionsResult} commute - Commute calculation details.
+ */
+
+/**
+ * Assembles a complete deterministic facts sheet for a user profile and ambient air readings.
+ *
+ * @param {Object} profile - User household and commute parameters.
+ * @param {number} [profile.commuteKm] - Commute distance.
+ * @param {string} [profile.commuteMode] - Baseline vehicle type.
+ * @param {number} [profile.outdoorHours] - Daily outdoor hours.
+ * @param {boolean} [profile.hasVulnerable] - Presence of children or elderly.
+ * @param {Object} airData - Ambient air telemetry payload.
+ * @param {number} [airData.pm2_5] - Ambient PM2.5 level.
+ * @returns {ComputedFactsPayload} Complete deterministic facts dossier.
  */
 export function generateComputedFacts(profile, airData) {
   const pm25 = airData.pm2_5 || 120;

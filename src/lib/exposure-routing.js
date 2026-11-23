@@ -1,10 +1,15 @@
 /**
- * Lowest-Exposure Transit Pathfinding & Cumulative Inhaled Dose Model.
+ * @fileoverview Lowest-Exposure Transit Pathfinding & Cumulative Inhaled Dose Model.
  * Sources:
  * - US EPA Exposure Factors Handbook (Chapter 6: Inhalation Rates)
  * - Aerosol and Air Quality Research (Microenvironmental pollutant ratios during urban commuting)
+ * @module exposure-routing
  */
 
+/**
+ * Minute ventilation rates and cabin penetration coefficients from empirical EPA studies.
+ * @type {Readonly<Object>}
+ */
 export const INHALATION_FACTORS = {
   // Minute ventilation rates (m³/min) per EPA Exposure Factors
   VENTILATION: {
@@ -25,8 +30,14 @@ export const INHALATION_FACTORS = {
 };
 
 /**
- * Calculate cumulative inhaled PM2.5 dose (µg) for a transit journey:
+ * Calculates cumulative inhaled PM2.5 dose (µg) for a transit journey:
  * Inhaled Dose = Ambient PM2.5 (µg/m³) * Microenvironment Factor * Ventilation (m³/min) * Duration (min)
+ *
+ * @param {number} ambientPm25 - Ambient roadside PM2.5 concentration in µg/m³.
+ * @param {number} durationMin - Transit segment duration in minutes.
+ * @param {('walking'|'cycling'|'auto'|'metro'|'car')} mode - Transit travel modality.
+ * @param {boolean} [withN95=false] - Whether a fitted N95 respirator is worn.
+ * @returns {number} Cumulative inhaled particulate mass in micrograms (µg).
  */
 export function calculateInhaledDose(ambientPm25, durationMin, mode, withN95 = false) {
   let ventilation = INHALATION_FACTORS.VENTILATION.RESTING_OR_VEHICLE;
@@ -67,7 +78,37 @@ export function calculateInhaledDose(ambientPm25, durationMin, mode, withN95 = f
 }
 
 /**
- * Comparative multi-modal routing assessment for a given commute distance
+ * @typedef {Object} TransitModeOption
+ * @property {string} id - Unique identifier for the transit option.
+ * @property {string} name - Human-readable label for the commute mode.
+ * @property {number} speedKmH - Average urban transit speed in km/h.
+ * @property {string} modeKey - Internal key mapped to ventilation rate.
+ * @property {boolean} requiresMask - Advisory boolean on mask recommendation.
+ * @property {boolean} [withN95] - Whether fitted N95 filtration is factored.
+ * @property {number} distanceKm - Commute distance in kilometers.
+ * @property {number} durationMin - Journey time in minutes.
+ * @property {number} inhaledDoseUg - Predicted inhaled PM2.5 dose in micrograms.
+ */
+
+/**
+ * @typedef {Object} TransitExposureComparison
+ * @property {number} distanceKm - Evaluated journey distance.
+ * @property {number} ambientPm25 - Ambient PM2.5 reference level.
+ * @property {Array<TransitModeOption>} options - Ranked transit mode options.
+ * @property {string} safestMode - Name of the lowest-exposure transit modality.
+ * @property {string} highestExposureMode - Name of the highest-exposure modality.
+ * @property {number} doseAvoidedUg - Micrograms of PM2.5 avoided by choosing safest mode.
+ * @property {number} percentReduction - Percentage exposure reduction achieved.
+ * @property {number} safestDoseUg - Inhaled dose of the safest transit mode in micrograms.
+ * @property {number} maxDoseUg - Inhaled dose of the highest exposure transit mode in micrograms.
+ */
+
+/**
+ * Performs a comparative multi-modal routing assessment for a given commute distance.
+ *
+ * @param {number} distanceKm - Journey distance in kilometers.
+ * @param {number} ambientPm25 - Baseline roadside ambient PM2.5 in µg/m³.
+ * @returns {TransitExposureComparison} Multi-modal comparison report sorted by dose.
  */
 export function compareTransitExposure(distanceKm, ambientPm25) {
   // Speed assumptions (km/h)
@@ -100,11 +141,12 @@ export function compareTransitExposure(distanceKm, ambientPm25) {
   return {
     distanceKm,
     ambientPm25,
+    options: results,
     safestMode: safest.name,
-    safestDoseUg: safest.inhaledDoseUg,
-    maxDoseUg: mostExposed.inhaledDoseUg,
+    highestExposureMode: mostExposed.name,
     doseAvoidedUg,
     percentReduction,
-    options: results,
+    safestDoseUg: safest.inhaledDoseUg,
+    maxDoseUg: mostExposed.inhaledDoseUg,
   };
 }

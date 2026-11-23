@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Respiro 2.0 Core Express 5 Server Application.
+ * Configures hardened defensive middleware, static asset routing with MIME type enforcement,
+ * dynamic CORS origin validation, and REST API endpoints for air quality telemetry,
+ * AI routine optimization, transit exposure analysis, and community smog defense.
+ * @module server
+ */
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -22,10 +30,28 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Structured Server Logger (ISO timestamped, tagged)
+/**
+ * Structured ISO-timestamped server logger.
+ * @type {Readonly<Object>}
+ */
 export const logger = {
+  /**
+   * Logs an informational message with an ISO-8601 timestamp.
+   * @param {string} msg - Informational message string.
+   * @param {...unknown} args - Supplementary arguments or objects.
+   */
   info: (msg, ...args) => console.log(`[${new Date().toISOString()}] [INFO] ${msg}`, ...args),
+  /**
+   * Logs a warning message with an ISO-8601 timestamp.
+   * @param {string} msg - Warning message string.
+   * @param {...unknown} args - Supplementary arguments or objects.
+   */
   warn: (msg, ...args) => console.warn(`[${new Date().toISOString()}] [WARN] ${msg}`, ...args),
+  /**
+   * Logs an error message with an ISO-8601 timestamp.
+   * @param {string} msg - Error message string.
+   * @param {...unknown} args - Supplementary arguments or objects.
+   */
   error: (msg, ...args) => console.error(`[${new Date().toISOString()}] [ERROR] ${msg}`, ...args),
 };
 
@@ -57,7 +83,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
   },
 }));
 
-// Dynamic CORS allowlist with wildcard, localhost, and onrender.com support
+/**
+ * Verified allowed origins for Cross-Origin Resource Sharing (CORS).
+ * @type {Array<string>}
+ */
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
@@ -73,6 +102,11 @@ if (process.env.ALLOWED_ORIGINS) {
 }
 
 app.use(cors({
+  /**
+   * Origin validator callback for incoming CORS requests.
+   * @param {string|undefined} origin - Origin header value.
+   * @param {Function} callback - Node/CORS callback (err, allow).
+   */
   origin: (origin, callback) => {
     // Direct requests, curl, or server-to-server
     if (!origin) return callback(null, true);
@@ -99,9 +133,14 @@ app.use(validatePayloadSize);
 app.use(express.json({ limit: LIMITS.MAX_BODY_BYTES }));
 app.use(rateLimiter);
 
-// API Routes
+// ==========================================
+// REST API Routes
+// ==========================================
 
-// Health Check
+/**
+ * Health check endpoint returning system status and security parameters.
+ * @name GET /api/health
+ */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -115,7 +154,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Live Air Quality Telemetry
+/**
+ * Live air quality telemetry endpoint.
+ * @name GET /api/air
+ * @param {string} [req.query.city='Delhi'] - Target city name query.
+ */
 app.get('/api/air', async (req, res) => {
   try {
     const rawCity = sanitizeText(req.query.city || 'Delhi', LIMITS.MAX_NAME_LENGTH);
@@ -127,7 +170,13 @@ app.get('/api/air', async (req, res) => {
   }
 });
 
-// AI & Deterministic Routine Optimizer
+/**
+ * Generative AI and deterministic routine optimizer endpoint.
+ * @name POST /api/routine
+ * @param {Object} req.body.profile - Household vulnerability and commute profile.
+ * @param {Object} req.body.airData - Current ambient air telemetry.
+ * @param {string} [req.body.notes] - Untrusted user lifestyle notes.
+ */
 app.post('/api/routine', async (req, res) => {
   try {
     const { profile = {}, airData = {}, notes = '' } = req.body;
@@ -140,7 +189,12 @@ app.post('/api/routine', async (req, res) => {
   }
 });
 
-// Inhaled Dose & Lowest-Exposure Route Comparison (Strict Physical Type Guards)
+/**
+ * Multi-modal transit exposure dose comparison endpoint.
+ * @name POST /api/route
+ * @param {number} req.body.distanceKm - Commute distance in kilometers.
+ * @param {number} req.body.pm25 - Ambient PM2.5 in µg/m³.
+ */
 app.post('/api/route', (req, res) => {
   try {
     const { distanceKm, pm25 } = req.body;
@@ -162,7 +216,13 @@ app.post('/api/route', (req, res) => {
   }
 });
 
-// Indoor CADR & Corsi-Rosenthal Box Sizing (Strict Physical Type Guards)
+/**
+ * Indoor Clean Air Delivery Rate (CADR) & Corsi-Rosenthal Box sizing endpoint.
+ * @name POST /api/cadr
+ * @param {number} req.body.lengthFt - Room length in feet (5-100).
+ * @param {number} req.body.widthFt - Room width in feet (5-100).
+ * @param {number} req.body.heightFt - Ceiling height in feet (6-30).
+ */
 app.post('/api/cadr', (req, res) => {
   try {
     const { lengthFt, widthFt, heightFt } = req.body;
@@ -182,11 +242,22 @@ app.post('/api/cadr', (req, res) => {
   }
 });
 
-// Community Smog Defense Endpoints
+/**
+ * Retrieves community emission reduction pledges.
+ * @name GET /api/community/pledges
+ */
 app.get('/api/community/pledges', (req, res) => {
   res.json(communityStore.getPledges());
 });
 
+/**
+ * Submits a new community emission reduction pledge.
+ * @name POST /api/community/pledges
+ * @param {string} req.body.name - Resident name.
+ * @param {string} req.body.locality - Residential neighborhood.
+ * @param {string} req.body.action - Emission mitigation pledge.
+ * @param {number} [req.body.co2SavedKg] - Estimated emission reduction.
+ */
 app.post('/api/community/pledges', (req, res) => {
   try {
     const { name, locality, action, co2SavedKg } = req.body;
@@ -211,10 +282,21 @@ app.post('/api/community/pledges', (req, res) => {
   }
 });
 
+/**
+ * Retrieves crowdsourced smog and open-burning incident reports.
+ * @name GET /api/community/incidents
+ */
 app.get('/api/community/incidents', (req, res) => {
   res.json(communityStore.getIncidents());
 });
 
+/**
+ * Submits a crowdsourced neighborhood smog or open-burning incident.
+ * @name POST /api/community/incidents
+ * @param {string} [req.body.reporter] - Citizen reporter identifier.
+ * @param {string} req.body.locality - Location coordinates or landmark.
+ * @param {string} req.body.type - Incident classification.
+ */
 app.post('/api/community/incidents', (req, res) => {
   try {
     const { reporter, locality, type } = req.body;
@@ -238,13 +320,20 @@ app.post('/api/community/incidents', (req, res) => {
   }
 });
 
-// SPA Fallback
+// Single Page Application (SPA) HTML fallback
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Information Disclosure Prevention (CWE-209 & CWE-200)
-app.use((err, req, res, next) => {
+/**
+ * Centralized error-handling middleware preventing stack trace and system info disclosure (CWE-209 & CWE-200).
+ *
+ * @param {Error} err - Caught error object.
+ * @param {import('express').Request} _req - Express request.
+ * @param {import('express').Response} res - Express response.
+ * @param {import('express').NextFunction} _next - Express next function.
+ */
+app.use((err, _req, res, _next) => {
   logger.error('[SECURITY AUDIT] Unhandled Server Exception:', err);
   res.status(500).json({ error: 'Internal Server Error' });
 });

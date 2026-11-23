@@ -1,13 +1,40 @@
 /**
- * Live Dashboard View Controller.
+ * @fileoverview Live Dashboard View Controller.
  * Renders AQI status, pollutant breakdown, and 12-hour forecast strip.
  * Enforces the WCAG 2.2 Twin Representation Rule for visual metrics.
+ * @module dashboard-view
  */
 
+/**
+ * Renders the live air quality telemetry dashboard into the DOM.
+ * Generates visual status cards paired with screen-reader accessible twin description lists.
+ *
+ * @param {Object} data - Live air telemetry payload.
+ * @param {number} data.aqi - Air Quality Index.
+ * @param {string} data.category - EPA AQI category name.
+ * @param {string} data.symbol - Geometric category symbol.
+ * @param {string} data.dominantPollutant - Main pollutant driving AQI.
+ * @param {string} data.city - Selected city display name.
+ * @param {string} data.source - Provenance source label.
+ * @param {string} data.timestamp - ISO observation time string.
+ * @param {string} data.action - Recommended action string.
+ * @param {string} data.cleanestHour - Cleanest hour of day (HH:MM).
+ * @param {number} data.cleanestPm25 - Projected minimum PM2.5.
+ * @param {string} data.worstHour - Worst hour of day (HH:MM).
+ * @param {number} data.worstPm25 - Projected maximum PM2.5.
+ * @param {Object} data.pollutants - Individual pollutant concentrations.
+ * @param {Array<{ hour: string, pm25: number, aqi?: number }>} data.hourlyForecast - 12-hr forecast strip.
+ * @returns {void}
+ */
 export function renderDashboard(data) {
   const container = document.getElementById('dashboard-view');
   if (!container) return;
 
+  /**
+   * Resolves CSS class name for a given AQI category.
+   * @param {string} category - Clinical AQI category string.
+   * @returns {string} CSS modifier class.
+   */
   const getBadgeClass = (category) => {
     switch (category) {
       case 'Good': return 'aqi-good';

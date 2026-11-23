@@ -1,10 +1,18 @@
 /**
- * Clean Air Engineering & CADR Calculator View Controller.
- * Sizing for rooms and Corsi-Rosenthal DIY Box vs HEPA purifier comparison.
+ * @fileoverview Clean Air Engineering & CADR Calculator View Controller.
+ * Manages room dimension form submissions, computes required CADR according to ASHRAE 62.2,
+ * and renders comparative tables for DIY Corsi-Rosenthal boxes versus commercial HEPA purifiers.
+ * @module cadr-view
  */
 
 import { api } from './api.js';
 
+/**
+ * Initializes the CADR calculator view, binds form submit event handlers,
+ * and handles dynamic rendering of room sizing and engineering comparison data.
+ *
+ * @returns {void}
+ */
 export function setupCADRView() {
   const form = document.getElementById('cadr-form');
   const resultsContainer = document.getElementById('cadr-results');
@@ -12,9 +20,9 @@ export function setupCADRView() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const lengthFt = Number(document.getElementById('cadr-length').value) || 15;
-    const widthFt = Number(document.getElementById('cadr-width').value) || 12;
-    const heightFt = Number(document.getElementById('cadr-height').value) || 9;
+    const lengthFt = Number(/** @type {HTMLInputElement} */ (document.getElementById('cadr-length')).value) || 15;
+    const widthFt = Number(/** @type {HTMLInputElement} */ (document.getElementById('cadr-width')).value) || 12;
+    const heightFt = Number(/** @type {HTMLInputElement} */ (document.getElementById('cadr-height')).value) || 9;
 
     try {
       const data = await api.calculateCADR(lengthFt, widthFt, heightFt);

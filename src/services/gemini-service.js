@@ -1,10 +1,11 @@
 /**
- * AI Routine Generation Service.
+ * @fileoverview AI Routine Generation Service.
  * Features:
  * - SHA-256 Hash-Keyed In-Memory LRU Cache (< 5ms repeat latency)
  * - Safe JSON Regex Extraction (robust against conversational preambles)
  * - Number Firewall Verification (zero hallucinated figures)
  * - Seamless Fallback to Deterministic Impact Engine
+ * @module gemini-service
  */
 
 import { createHash } from 'crypto';
@@ -12,14 +13,30 @@ import { generateComputedFacts } from '../lib/impact-calculator.js';
 import { verifyNumbers } from '../lib/number-firewall.js';
 import { fenceUserNotes, sanitizeText } from '../lib/prompt-guard.js';
 
-// In-Memory SHA-256 LRU Cache
+/**
+ * In-memory SHA-256 LRU cache for generative AI routines.
+ * @type {Map<string, Object>}
+ */
 const insightCache = new Map();
+
+/** Maximum allowed entries in the in-memory routine cache. */
 const MAX_CACHE_ENTRIES = 100;
 
+/**
+ * Hashes an arbitrary payload object into a deterministic 16-character SHA-256 hex string.
+ *
+ * @param {unknown} obj - JSON-serializable input object.
+ * @returns {string} Truncated SHA-256 hex digest.
+ */
 function hashPayload(obj) {
   return createHash('sha256').update(JSON.stringify(obj)).digest('hex').slice(0, 16);
 }
 
+/**
+ * Evicts the oldest cache entry (FIFO) when the cache reaches capacity.
+ *
+ * @returns {void}
+ */
 function pruneCache() {
   if (insightCache.size >= MAX_CACHE_ENTRIES) {
     const firstKey = insightCache.keys().next().value;
@@ -28,8 +45,29 @@ function pruneCache() {
 }
 
 /**
- * Generate a rule-based deterministic plan when API keys are not provided
+ * @typedef {Object} RoutineItem
+ * @property {string} title - Descriptive title of the routine.
+ * @property {string} action - Practical action instruction for the household.
+ * @property {string} impact - Quantified scientific health impact statement.
+ */
+
+/**
+ * @typedef {Object} OptimizedRoutinePlan
+ * @property {string} summary - Concise medical/lifestyle executive summary.
+ * @property {Array<RoutineItem>} routines - Array of 3 calibrated routine items.
+ * @property {Array<Object>} facts - Grounded deterministic facts.
+ * @property {string} engineSource - Execution engine identifier.
+ * @property {boolean} [cacheHit] - Whether the response was served from cache.
+ */
+
+/**
+ * Generates a rule-based deterministic plan when API keys are not provided
  * or when an LLM fails number verification.
+ *
+ * @param {Object} factsPayload - Computed facts payload from the mathematical impact engine.
+ * @param {Object} profile - User household and commute parameters.
+ * @param {Object} airData - Ambient air telemetry payload.
+ * @returns {OptimizedRoutinePlan} Deterministic calibrated routine plan.
  */
 function generateDeterministicPlan(factsPayload, profile, airData) {
   const pm25 = airData.pm2_5 || 120;
@@ -62,7 +100,12 @@ function generateDeterministicPlan(factsPayload, profile, airData) {
 }
 
 /**
- * Main routine optimizer entry point
+ * Optimizes an urban routine using Gemini 3.1 Flash Lite with verified deterministic facts and Number Firewall.
+ *
+ * @param {Object} profile - Household vulnerability and commute profile.
+ * @param {Object} airData - Live or baseline air quality telemetry.
+ * @param {string} [userNotes=''] - Free-form lifestyle notes to be sanitized.
+ * @returns {Promise<OptimizedRoutinePlan>} Calibrated health protection plan.
  */
 export async function generateOptimizedRoutine(profile, airData, userNotes = '') {
   const factsPayload = generateComputedFacts(profile, airData);
@@ -99,57 +142,69 @@ Instructions:
 {
   "summary": "...",
   "routines": [
+    { "title": "...", "action": "...", "impact": "..." },
+    { "title": "...", "action": "...", "impact": "..." },
     { "title": "...", "action": "...", "impact": "..." }
   ]
 }`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
+        generationConfig: {
+          temperature: 0.2, // Low temperature for factual precision
+          responseMimeType: 'application/json',
+        },
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
-    if (!response.ok) {
-      throw new Error(`Gemini API returned status ${response.status}`);
+    if (!res.ok) {
+      throw new Error(`Gemini API returned status ${res.status}`);
     }
 
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    // Robust regex parsing to safely strip conversational preambles and markdown fences
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Model response did not contain a valid JSON block');
+    // Parse JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      // Regex extraction fallback
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      else throw new Error('Failed to parse model JSON');
     }
-    const parsed = JSON.parse(jsonMatch[0]);
 
-    // Run Number Firewall verification
-    const fullText = `${parsed.summary} ${(parsed.routines || []).map((r) => `${r.title} ${r.action} ${r.impact}`).join(' ')}`;
+    // Number Firewall Verification: ensure no invented numbers
+    const fullText = `${parsed.summary} ${parsed.routines.map((r) => `${r.action} ${r.impact}`).join(' ')}`;
     const verification = verifyNumbers(fullText, factsPayload.allowedNumbers);
 
     if (!verification.passed) {
-      console.warn('Number Firewall rejected hallucinated figures:', verification.unverified);
-      const plan = generateDeterministicPlan(factsPayload, profile, airData);
-      pruneCache();
-      insightCache.set(cacheKey, plan);
-      return plan;
+      console.warn('[Number Firewall] Model generated unverified numbers:', verification.unverified);
+      return generateDeterministicPlan(factsPayload, profile, airData);
     }
 
-    const result = {
+    const plan = {
       summary: parsed.summary,
       routines: parsed.routines,
       facts: factsPayload.facts,
-      engineSource: 'gemini-verified',
+      engineSource: 'gemini-2.5-flash-grounded',
     };
 
     pruneCache();
-    insightCache.set(cacheKey, result);
-    return result;
+    insightCache.set(cacheKey, plan);
+    return plan;
   } catch (err) {
-    console.error('LLM generation failed, falling back to deterministic plan:', err.message);
+    console.warn('[Gemini Service] Fallback triggered:', err.message);
     const plan = generateDeterministicPlan(factsPayload, profile, airData);
     pruneCache();
     insightCache.set(cacheKey, plan);

@@ -1,13 +1,25 @@
 /**
- * Prompt Guard & Input Sanitization.
+ * @fileoverview Prompt Guard & Input Sanitization.
  * Defends against Prompt Injection, System Prompt Exfiltration, XSS, and Malformed Input (CWE-20).
+ * @module prompt-guard
  */
 
-// Non-printable control characters [\x00-\x1f\x7f] and invisible unicode overrides
+/**
+ * Regular expression matching non-printable ASCII control characters [\x00-\x1f\x7f].
+ * @type {RegExp}
+ */
 const CONTROL_CHAR_REGEX = /[\x00-\x1f\x7f]/g;
+
+/**
+ * Regular expression matching zero-width, invisible, and bidirectional override Unicode characters.
+ * @type {RegExp}
+ */
 const INVISIBLE_CHARS = /[\u200B-\u200D\uFEFF\u00AD\u202A-\u202E]/g;
 
-// Prompt injection signatures
+/**
+ * Signatures indicative of adversarial prompt injection and jailbreak attempts.
+ * @type {Array<RegExp>}
+ */
 const INJECTION_PATTERNS = [
   /ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions/i,
   /disregard\s+(?:the\s+)?system\s+prompt/i,
@@ -18,7 +30,11 @@ const INJECTION_PATTERNS = [
 ];
 
 /**
- * Strips non-printable control characters [\x00-\x1f\x7f] and invisible unicode characters
+ * Strips non-printable control characters [\x00-\x1f\x7f] and invisible unicode characters.
+ *
+ * @param {unknown} input - Raw untrusted user input string.
+ * @param {number} [maxLen=2000] - Maximum permissible character length.
+ * @returns {string} Cleaned and truncated string.
  */
 export function sanitizeText(input, maxLen = 2000) {
   if (typeof input !== 'string') return '';
@@ -30,21 +46,32 @@ export function sanitizeText(input, maxLen = 2000) {
 }
 
 /**
- * Validates finite numbers within physical bounds (e.g. AQI 0-1000, PM2.5 0-2000)
+ * Validates whether a value is a finite number within specified physical boundaries.
+ *
+ * @param {unknown} val - Value under test.
+ * @param {number} [min=0] - Lower acceptable bound.
+ * @param {number} [max=Infinity] - Upper acceptable bound.
+ * @returns {boolean} True if the value is a valid finite number within [min, max].
  */
 export function isFiniteNumber(val, min = 0, max = Infinity) {
   return typeof val === 'number' && Number.isFinite(val) && val >= min && val <= max;
 }
 
 /**
- * Clean input of invisible characters and trim
+ * Strips invisible unicode characters and trims whitespace from untrusted input.
+ *
+ * @param {unknown} str - Input string to sanitize.
+ * @returns {string} Cleaned string.
  */
 export function stripInvisibleCharacters(str) {
   return sanitizeText(str);
 }
 
 /**
- * HTML entity escaping for XSS prevention
+ * Escapes HTML entity special characters (&, <, >, ", ') to prevent Cross-Site Scripting (XSS).
+ *
+ * @param {unknown} str - String to encode.
+ * @returns {string} Safely escaped HTML entity string.
  */
 export function sanitizeHTML(str) {
   if (!str || typeof str !== 'string') return '';
@@ -57,7 +84,17 @@ export function sanitizeHTML(str) {
 }
 
 /**
- * Scan input for adversarial prompt injection attempts
+ * @typedef {Object} PromptScanResult
+ * @property {boolean} isSafe - True if no adversarial patterns or injection strings were detected.
+ * @property {string} sanitized - Sanitized, HTML-escaped text payload.
+ * @property {Array<string>} flags - List of matched injection pattern signatures.
+ */
+
+/**
+ * Scans an untrusted input string for adversarial prompt injection attempts and applies escaping.
+ *
+ * @param {unknown} input - Untrusted input string.
+ * @returns {PromptScanResult} Security scan assessment report.
  */
 export function scanPrompt(input) {
   const cleaned = sanitizeText(input);
@@ -80,7 +117,11 @@ export function scanPrompt(input) {
 }
 
 /**
- * Wrap sanitized user notes into a secure delimiter fence for LLM context
+ * Wraps sanitized user notes into a secure delimiter fence for LLM context injection.
+ * Omit notes if an injection attack signature is detected.
+ *
+ * @param {unknown} notes - Untrusted user notes or instructions.
+ * @returns {string} Fenced notes block or security policy omission warning.
  */
 export function fenceUserNotes(notes) {
   const scan = scanPrompt(notes);

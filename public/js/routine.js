@@ -1,10 +1,18 @@
 /**
- * AI Routine Optimizer Controller.
+ * @fileoverview AI Routine Optimizer View Controller.
  * Handles household inputs, deterministic facts rendering, and Number-Firewall verified routines.
+ * @module routine-view
  */
 
 import { api } from './api.js';
 
+/**
+ * Initializes the AI routine optimizer form, attaches submit event listeners,
+ * and renders calibrated protective schedules and deterministic health impact facts.
+ *
+ * @param {Function} getCurrentAirData - State accessor callback returning current telemetry.
+ * @returns {void}
+ */
 export function setupRoutineView(getCurrentAirData) {
   const form = document.getElementById('routine-form');
   const resultsContainer = document.getElementById('routine-results');
@@ -18,13 +26,13 @@ export function setupRoutineView(getCurrentAirData) {
     resultsContainer.innerHTML = '<p class="alert-box" aria-live="polite">Optimizing routine against deterministic health impact models...</p>';
 
     const profile = {
-      hasVulnerable: document.getElementById('prof-vulnerable').checked,
-      commuteMode: document.getElementById('prof-commute').value,
-      commuteKm: Number(document.getElementById('prof-distance').value) || 12,
-      outdoorHours: Number(document.getElementById('prof-outdoor-hours').value) || 2,
+      hasVulnerable: /** @type {HTMLInputElement} */ (document.getElementById('prof-vulnerable')).checked,
+      commuteMode: /** @type {HTMLSelectElement} */ (document.getElementById('prof-commute')).value,
+      commuteKm: Number(/** @type {HTMLInputElement} */ (document.getElementById('prof-distance')).value) || 12,
+      outdoorHours: Number(/** @type {HTMLInputElement} */ (document.getElementById('prof-outdoor-hours')).value) || 2,
     };
 
-    const notes = document.getElementById('prof-notes').value;
+    const notes = /** @type {HTMLTextAreaElement} */ (document.getElementById('prof-notes')).value;
 
     try {
       const plan = await api.generateRoutine(profile, airData, notes);
@@ -63,7 +71,7 @@ export function setupRoutineView(getCurrentAirData) {
         </div>
       `;
     } catch (err) {
-      resultsContainer.innerHTML = `<p class="alert-box alert-warning">Unable to generate plan: ${err.message}</p>`;
+      resultsContainer.innerHTML = `<p class="alert-box alert-warning">Optimization error: ${err.message}</p>`;
     }
   });
 }

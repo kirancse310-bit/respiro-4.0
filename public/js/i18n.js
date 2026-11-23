@@ -1,8 +1,15 @@
 /**
- * Internationalization (i18n) dictionary supporting 6 languages:
+ * @fileoverview Internationalization (i18n) Dictionary and Direction Switcher.
+ * Provides translated UI strings for 6 languages:
  * en (English), hi (Hindi), ur (Urdu - RTL), pa (Punjabi), bn (Bengali), mr (Marathi).
+ * Dynamically toggles bidirectional document direction (`dir="rtl"|"ltr"`).
+ * @module i18n
  */
 
+/**
+ * Multi-language localization dictionary for Respiro 2.0.
+ * @type {Readonly<Record<string, Record<string, string>>>}
+ */
 export const TRANSLATIONS = {
   en: {
     title: 'Respiro 2.0',
@@ -42,7 +49,7 @@ export const TRANSLATIONS = {
     title: 'ریسپیرو 2.0',
     tagline: 'شہری ہوا کے معیار کا معاون اور سموگ سے تحفظ کا پلیٹ فارم',
     tab_dashboard: 'لائیو ہوا کا معیار',
-    tab_routine: 'روٹین پلانر',
+    tab_routine: 'روٹین پلانਰ',
     tab_navigator: 'محفوظ سفر کا راستہ',
     tab_cadr: 'صاف ہوا کا حساب',
     tab_community: 'کمیونٹی الرٹ',
@@ -108,6 +115,13 @@ export const TRANSLATIONS = {
   },
 };
 
+/**
+ * Switches the active UI language, updates all `data-i18n` elements,
+ * and configures the document's `lang` and `dir` attributes (RTL for Urdu).
+ *
+ * @param {string} langCode - Language code ('en'|'hi'|'ur'|'pa'|'bn'|'mr').
+ * @returns {void}
+ */
 export function setLanguage(langCode) {
   const lang = TRANSLATIONS[langCode] || TRANSLATIONS.en;
   document.documentElement.lang = langCode;
@@ -115,7 +129,7 @@ export function setLanguage(langCode) {
 
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
-    if (lang[key]) {
+    if (key && lang[key]) {
       el.textContent = lang[key];
     }
   });
